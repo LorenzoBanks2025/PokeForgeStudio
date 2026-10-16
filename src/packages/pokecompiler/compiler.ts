@@ -5,10 +5,12 @@
  */
 
 import { DecompiledProject } from '../pokedcomp/types.ts';
+import { PokeDecompiler } from '../pokedcomp/decompiler.ts';
 import { CompilerOptions, CompileResult } from './types.ts';
 import { RomBuilder } from './romBuilder.ts';
 import { PretExporter } from './pretExporter.ts';
 import { StandaloneBuilder } from './standaloneBuilder.ts';
+import { IpsPatcher } from './ipsPatcher.ts';
 
 export class PokeCompiler {
   static async compile(project: DecompiledProject, options: CompilerOptions): Promise<CompileResult> {
@@ -22,11 +24,21 @@ export class PokeCompiler {
     logs.push(`Target Output: [${options.target}]`);
 
     let romData: Uint8Array | undefined;
+    let ipsData: Uint8Array | undefined;
     let zipBlob: Blob | undefined;
 
     try {
       if (options.target === 'gba_rom') {
-        romData = RomBuilder.buildGbaRom(project, logs);
+        romData = RomBuilder.buildGbaRom(project, logs, options.baseRom);
+      } else if (options.target === 'ips_patch') {
+        logs.push(`Building target modified GBA ROM image...`);
+        romData = RomBuilder.buildGbaRom(project, logs, options.baseRom);
+        logs.push(`Generating clean base ROM image for delta diffing...`);
+        const baseProject = PokeDecompiler.getStarterProject(project.game);
+        const baseRom = options.baseRom || RomBuilder.buildGbaRom(baseProject, []);
+        logs.push(`Calculating IPS patch records (comparing ${baseRom.length} bytes)...`);
+        ipsData = IpsPatcher.createPatch(baseRom, romData);
+        logs.push(`✓ Generated ${ipsData.length} bytes IPS patch file.`);
       } else if (options.target === 'html5_bundle') {
         zipBlob = await StandaloneBuilder.exportHtml5Bundle(project, logs);
       } else if (options.target === 'pret_zip') {
@@ -45,6 +57,7 @@ export class PokeCompiler {
         success: true,
         target: options.target,
         romData,
+        ipsData,
         zipBlob,
         logs,
         warnings,

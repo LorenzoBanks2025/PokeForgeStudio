@@ -10,3 +10,5 @@ export * from './pretExporter.ts';
 export * from './standaloneBuilder.ts';
 export * from './wasmEmulator.ts';
 export * from './compiler.ts';
+export * from './validator.ts';
+export * from './ipsPatcher.ts';

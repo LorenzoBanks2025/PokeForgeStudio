@@ -1,36 +1,32 @@
-# PokéForge Studio: ROM Decompilation Gate, Project File Workspace & Render Deployment
+# Professional-Grade ROM Hacking Suite Expansion Plan
 
-This implementation plan covers updating PokéForge Studio to enforce a mandatory GBA ROM decompilation gate on startup, implement a robust `.pokeforge` project file & folder specification with server/IndexedDB persistence, enable asset upload/replacement, and ensure full Render deployment compatibility (`server.ts` + Express + Vite).
+This implementation plan covers expanding PokéForge Studio into a professional-grade GBA Pokémon ROM editing suite with advanced tools matching elite desktop ROM hackers (Advance Map, PGE, HMA).
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following architectural enhancements were confirmed during clarification:
-> - **Mandatory Decompilation Gate**: Clean startup landing screen requiring a `.gba` ROM upload or 1-click Sample ROM loader before accessing the visual editor.
-> - **Project File & Folder Specification**: `.pokeforge` archive format storing JSON manifests, extracted tilesets, sprites, map layouts, and event scripts. Server-backed project zip export and browser IndexedDB workspace persistence.
-> - **Asset Management**: Ability to upload and replace custom PNG tilesets, map graphics, and sprite assets.
-> - **Render Compatibility**: Full Express server entry point (`server.ts`) supporting production static file serving and API endpoints.
+> The following professional modules will be built and integrated into the sidebar navigation and editor views:
+> 1. **Trainer Roster & Party Editor**: Customize trainer classes, AI tactics, intro/defeat quotes, and full party Pokémon (species, levels, held items, custom movepools).
+> 2. **Evolution Tree & Branching Editor**: Visual node-based or table editor for branching Pokémon evolutions (Level-up, Evolution Stones, Trading, Happiness).
+> 3. **Map Connections & Header Inspector**: Configure map headers (Music tracks, weather types, indoor/outdoor flags) and route connections (north, south, east, west map links).
+> 4. **Poké Mart Shop Inventories & Item Editor**: Edit item buy/sell prices, pocket categories, field/battle usability, and town Poké Mart shop item shelves.
+> 5. **Hex Offset Viewer & ROM Memory Inspector**: Raw binary ROM inspector with offset search, hex dump view, and pointer table resolver.
 
 ---
 
-## 1. Overview & Core Architecture
+## 1. Architectural & Component Additions
 
-1. **Startup Landing Gate (`RomDecompileGate.tsx`)**:
-   - Initial screen when no active project is loaded.
-   - Drag-and-drop `.gba` ROM uploader or "Load Sample Pokémon Emerald / FireRed Project" button.
-   - Decompilation progress terminal showing ROM header parsing, checksum verification, and asset extraction logs.
-2. **Project Workspace & File Specification (`.pokeforge`)**:
-   - Manifest (`project.json`), maps directory (`maps/`), assets directory (`assets/tilesets/`, `assets/sprites/`), encounters (`encounters.json`), and species (`species.json`).
-   - Server-backed API endpoints for project saving, loading, zip export, and asset uploads (`/api/project/save`, `/api/project/export`, `/api/assets/upload`).
-3. **Render Deployment Setup**:
-   - Express backend (`server.ts`) serving static frontend assets and API routes on `PORT` environment variable, with `"start": "node server.ts"` in `package.json`.
+- **Trainer Party Editor (`src/apps/pokeview/components/Trainers/TrainerEditorView.tsx`)**: Full trainer roster management with AI bitmask flags and party member customizers.
+- **Evolution Tree Editor (`src/apps/pokeview/components/PokemonEditor/EvolutionEditor.tsx`)**: Visual evolution condition manager for species.
+- **Map Headers & Connections (`src/apps/pokeview/components/MapEditor/MapHeaderInspector.tsx`)**: Route stitching and environmental header controls.
+- **Shop & Item Editor (`src/apps/pokeview/components/Items/ShopEditorView.tsx`)**: Poké Mart inventory manager and item price/description editor.
+- **Hex Offset Inspector (`src/apps/pokeview/components/HexViewer/HexInspectorModal.tsx`)**: Low-level GBA ROM byte viewer and pointer resolver.
 
 ---
 
-## 2. Technical Plan & File Changes
+## 2. Step-by-Step Implementation
 
-- **Backend (`server.ts`)**: Add Express endpoints for project export, zip handling, and asset storage.
-- **Project Store (`src/services/projectStore.ts`)**: IndexedDB + Server sync for `.pokeforge` project archives.
-- **Decompilation Landing (`src/apps/pokeview/components/RomDecompileGate.tsx`)**: Mandatory ROM upload & sample loader screen.
-- **Asset Manager (`src/apps/pokeview/components/AssetManager/AssetManagerModal.tsx`)**: Interface to upload/replace PNG tilesets, sprites, and audio samples.
-- **App Root (`src/apps/pokeview/PokeViewApp.tsx`)**: Integrate landing gate, project management, and asset manager.
+1. **Extend Types (`pokedcomp/types.ts`)**: Add types for trainer AI flags, shop inventories, map headers, and evolution conditions.
+2. **Build Professional Components**: Create the 5 new specialized editor views.
+3. **Integrate into Studio Navigation**: Add views to `StudioView` enum and sidebar/navbar selectors.
+4. **Build Verification**: Run `compile_applet` and `lint_applet` to ensure type safety and error-free builds.

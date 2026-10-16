@@ -8,7 +8,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { MapLayout, MapEvents, MovementPermission, MapBlock } from '@/src/packages/pokedcomp/types.ts';
 import { MapTool } from '../../types.ts';
 import { METATILES, MetatileDef } from './TilePalette.tsx';
-import { ZoomIn, ZoomOut, Grid, Eye, EyeOff, Layers, MapPin } from 'lucide-react';
+import { ZoomIn, ZoomOut, Grid, Eye, EyeOff, Layers, MapPin, Compass, CloudRain, Music } from 'lucide-react';
 
 interface MapCanvasProps {
   mapLayout: MapLayout;
@@ -18,6 +18,7 @@ interface MapCanvasProps {
   selectedCollision: MovementPermission;
   onUpdateBlocks: (newBlocks: MapBlock[]) => void;
   onSelectEvent: (eventId: string) => void;
+  onOpenHeaderModal?: () => void;
 }
 
 export const MapCanvas: React.FC<MapCanvasProps> = ({
@@ -27,10 +28,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   selectedTool,
   selectedCollision,
   onUpdateBlocks,
-  onSelectEvent
+  onSelectEvent,
+  onOpenHeaderModal
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [zoom, setZoom] = useState<number>(2); // 1x, 2x, 3x, 4x
+  const [showTiles, setShowTiles] = useState<boolean>(true);
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [showCollisions, setShowCollisions] = useState<boolean>(true);
   const [showEvents, setShowEvents] = useState<boolean>(true);
@@ -59,14 +62,19 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         const px = x * tileSize;
         const py = y * tileSize;
 
-        const meta = tileMap.get(block?.metatileId ?? 1);
-        ctx.fillStyle = meta ? meta.color : '#4ade80';
-        ctx.fillRect(px, py, tileSize, tileSize);
+        if (showTiles) {
+          const meta = tileMap.get(block?.metatileId ?? 1);
+          ctx.fillStyle = meta ? meta.color : '#4ade80';
+          ctx.fillRect(px, py, tileSize, tileSize);
 
-        if (meta?.border) {
-          ctx.strokeStyle = meta.border;
-          ctx.lineWidth = Math.max(1, zoom);
-          ctx.strokeRect(px + 1, py + 1, tileSize - 2, tileSize - 2);
+          if (meta?.border) {
+            ctx.strokeStyle = meta.border;
+            ctx.lineWidth = Math.max(1, zoom);
+            ctx.strokeRect(px + 1, py + 1, tileSize - 2, tileSize - 2);
+          }
+        } else {
+          ctx.fillStyle = '#090d16';
+          ctx.fillRect(px, py, tileSize, tileSize);
         }
 
         // 2. Draw Movement Permissions Mask if enabled
@@ -305,6 +313,20 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             </button>
           </div>
 
+          {/* Tiles Toggle */}
+          <button
+            onClick={() => setShowTiles(!showTiles)}
+            className={`p-1.5 rounded-md border text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors ${
+              showTiles
+                ? 'bg-emerald-950/60 border-emerald-600 text-emerald-300'
+                : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
+            title="Toggle Metatile Graphic Layer"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Tiles</span>
+          </button>
+
           {/* Grid Toggle */}
           <button
             onClick={() => setShowGrid(!showGrid)}
@@ -346,6 +368,18 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             <MapPin className="w-3.5 h-3.5" />
             <span>Events ({mapEvents.npcs.length + mapEvents.warps.length + mapEvents.signs.length})</span>
           </button>
+
+          {/* Atmosphere & Header Inspector Button */}
+          {onOpenHeaderModal && (
+            <button
+              onClick={onOpenHeaderModal}
+              className="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-md text-xs font-medium text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer ml-1"
+              title="Edit Map Atmosphere, BGM Music, and Weather"
+            >
+              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Header</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -6,19 +6,21 @@
 
 import { DecompiledProject } from '../pokedcomp/types.ts';
 
-export type BuildTarget = 'gba_rom' | 'html5_bundle' | 'pret_zip';
+export type BuildTarget = 'gba_rom' | 'html5_bundle' | 'pret_zip' | 'ips_patch';
 
 export interface CompilerOptions {
   target: BuildTarget;
   optimizeBytecode?: boolean;
   verifyChecksums?: boolean;
   injectDebugWarps?: boolean;
+  baseRom?: Uint8Array;
 }
 
 export interface CompileResult {
   success: boolean;
   target: BuildTarget;
   romData?: Uint8Array;
+  ipsData?: Uint8Array;
   zipBlob?: Blob;
   logs: string[];
   warnings: string[];

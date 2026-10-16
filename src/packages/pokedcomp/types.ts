@@ -41,6 +41,9 @@ export interface MapLayout {
   height: number;
   tilesetId: string;
   music: string;
+  weather?: string;
+  mapType?: string;
+  battleScene?: string;
   blocks: MapBlock[];
   borderBlocks?: number[];
 }
@@ -230,4 +233,26 @@ export interface DecompiledProject {
   moves: Record<string, Move>;
   trainers: Record<string, Trainer>;
   scripts: Record<string, EventScript>;
+}
+
+export interface MapConnection {
+  direction: 'up' | 'down' | 'left' | 'right';
+  offset: number;
+  mapId: string;
+}
+
+export interface MapHeaderInfo {
+  music: string;
+  weather: 'WEATHER_NONE' | 'WEATHER_SUNNY' | 'WEATHER_RAIN' | 'WEATHER_SNOW' | 'WEATHER_FOG';
+  mapType: 'MAP_TYPE_TOWN' | 'MAP_TYPE_ROUTE' | 'MAP_TYPE_INDOOR' | 'MAP_TYPE_UNDERGROUND';
+  allowBicycle: boolean;
+  allowEscapeRope: boolean;
+  allowRunning: boolean;
+  connections?: MapConnection[];
+}
+
+export interface ShopInventory {
+  shopId: string;
+  name: string;
+  items: string[]; // Item IDs
 }

@@ -9,8 +9,12 @@ export type StudioView =
   | 'event_editor'
   | 'wild_encounters'
   | 'pokemon_dex'
+  | 'trainers'
+  | 'evolutions'
+  | 'shops'
   | 'dialog_trainers'
-  | 'battle_scripts';
+  | 'battle_scripts'
+  | 'integrity_dashboard';
 
 export type MapTool = 'brush' | 'fill' | 'erase' | 'select' | 'collision_paint';
 
