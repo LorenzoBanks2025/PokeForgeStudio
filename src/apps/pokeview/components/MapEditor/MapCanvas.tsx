@@ -8,6 +8,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { MapLayout, MapEvents, MovementPermission, MapBlock } from '@/src/packages/pokedcomp/types.ts';
 import { MapTool } from '../../types.ts';
 import { METATILES, MetatileDef } from './TilePalette.tsx';
+import { renderGbaTileToCanvas } from '../AssetManager/romGraphics.ts';
 import { ZoomIn, ZoomOut, Grid, Eye, EyeOff, Layers, MapPin, Compass, CloudRain, Music } from 'lucide-react';
 
 interface MapCanvasProps {
@@ -19,6 +20,7 @@ interface MapCanvasProps {
   onUpdateBlocks: (newBlocks: MapBlock[]) => void;
   onSelectEvent: (eventId: string) => void;
   onOpenHeaderModal?: () => void;
+  tilesets?: Record<string, Uint8Array>;
 }
 
 export const MapCanvas: React.FC<MapCanvasProps> = ({
@@ -29,7 +31,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   selectedCollision,
   onUpdateBlocks,
   onSelectEvent,
-  onOpenHeaderModal
+  onOpenHeaderModal,
+  tilesets
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [zoom, setZoom] = useState<number>(2); // 1x, 2x, 3x, 4x
@@ -64,8 +67,22 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
         if (showTiles) {
           const meta = tileMap.get(block?.metatileId ?? 1);
-          ctx.fillStyle = meta ? meta.color : '#4ade80';
-          ctx.fillRect(px, py, tileSize, tileSize);
+          
+          if (tilesets && tilesets['TILESET_0']) {
+              // Placeholder palette for visualization (GBA uses 4bpp, 16 colors)
+              const palette = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#808080', '#404040', '#C0C0C0', '#202020', '#606060', '#A0A0A0', '#E0E0E0', '#FFFFFF'];
+              // Render 2x2 tiles to form a metatile (16x16)
+              for(let ty=0; ty<2; ty++) {
+                  for(let tx=0; tx<2; tx++) {
+                      const tileIdx = (block?.metatileId ?? 0) * 4 + (ty * 2 + tx);
+                      const tileData = tilesets['TILESET_0'].slice(tileIdx * 32, (tileIdx + 1) * 32);
+                      renderGbaTileToCanvas(ctx, tileData, px + (tx * 8), py + (ty * 8), palette);
+                  }
+              }
+          } else {
+              ctx.fillStyle = meta ? meta.color : '#4ade80';
+              ctx.fillRect(px, py, tileSize, tileSize);
+          }
 
           if (meta?.border) {
             ctx.strokeStyle = meta.border;
@@ -172,7 +189,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       ctx.lineWidth = 2;
       ctx.strokeRect(hoverCoord.x * tileSize, hoverCoord.y * tileSize, tileSize, tileSize);
     }
-  }, [mapLayout, mapEvents, tileSize, showGrid, showCollisions, showEvents, hoverCoord, zoom]);
+
+    // Draw tileset info
+    if (tilesets && Object.keys(tilesets).length > 0) {
+        ctx.fillStyle = 'white';
+        ctx.font = '12px monospace';
+        ctx.fillText(`Tilesets: ${Object.keys(tilesets).length}`, 10, 20);
+    }
+  }, [mapLayout, mapEvents, tileSize, showGrid, showCollisions, showEvents, hoverCoord, zoom, tilesets]);
 
   useEffect(() => {
     render();

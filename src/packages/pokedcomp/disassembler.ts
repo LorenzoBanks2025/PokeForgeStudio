@@ -129,4 +129,25 @@ export class ScriptDisassembler {
       parsedCommands
     };
   }
+  static assemble(script: EventScript): Uint8Array {
+      const buffer = new Uint8Array(1024); // simplistic
+      let pos = 0;
+      const opMap = new Map(Object.entries(OPCODES).map(([k, v]) => [v.name, parseInt(k)]));
+      
+      for (const cmd of script.parsedCommands) {
+          const op = opMap.get(cmd.command);
+          if (op !== undefined) {
+              buffer[pos++] = op;
+              // Simplistic argument handling
+              for (const arg of cmd.args) {
+                  const val = parseInt(arg.replace('0x', ''), 16);
+                  buffer[pos++] = val & 0xFF;
+                  if (arg.length > 4) buffer[pos++] = (val >> 8) & 0xFF;
+              }
+          } else if (cmd.command === '.byte') {
+              buffer[pos++] = parseInt(cmd.args[0].replace('0x', ''), 16);
+          }
+      }
+      return buffer.slice(0, pos);
+  }
 }

@@ -455,6 +455,7 @@ export const PokeViewApp: React.FC = () => {
               onUpdateBlocks={handleUpdateBlocks}
               onSelectEvent={() => setActiveView('event_editor')}
               onOpenHeaderModal={() => setIsMapHeaderOpen(true)}
+              tilesets={project.tilesets}
             />
           </div>
         )}

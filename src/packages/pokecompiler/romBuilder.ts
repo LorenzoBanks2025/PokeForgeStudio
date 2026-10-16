@@ -28,6 +28,33 @@ const TYPE_ID_MAP: Record<string, number> = {
   DRAGON: 0x0F, DARK: 0x10
 };
 
+class MemoryManager {
+  private rom: Uint8Array;
+  private pointer: number = 0x00E00000; // Start searching after primary ROM area
+
+  constructor(rom: Uint8Array) {
+    this.rom = rom;
+  }
+
+  allocate(size: number): number {
+    // Basic allocator: finds first contiguous block of 0xFF
+    let freeSpace = 0;
+    for (let i = this.pointer; i < this.rom.length; i++) {
+      if (this.rom[i] === 0xFF) {
+        freeSpace++;
+        if (freeSpace === size) {
+          const offset = i - size + 1;
+          this.pointer = i + 1;
+          return offset;
+        }
+      } else {
+        freeSpace = 0;
+      }
+    }
+    throw new Error('Out of ROM memory');
+  }
+}
+
 export class RomBuilder {
   /**
    * Compiles and merges the DecompiledProject into a valid, bootable GBA binary ROM (16MB).
@@ -40,6 +67,7 @@ export class RomBuilder {
     // Standard GBA ROM size: 16 MB (0x01000000 bytes)
     const romSize = 16 * 1024 * 1024;
     const rom = new Uint8Array(romSize);
+    const mem = new MemoryManager(rom);
 
     if (baseRom && baseRom.length > 0) {
       const validation = RomValidator.validateBaseRom(baseRom);
@@ -97,12 +125,19 @@ export class RomBuilder {
     // --- MERGING POKEPROJECT DATA INTO ROM BINARY ---
 
     // 1. Merge Pokémon Base Stats Table
-    // Emerald: 0x003203CC, FireRed: 0x00254784 (28 bytes per entry)
-    const baseStatsTableOffset = project.game === 'emerald' ? 0x003203CC : 0x00254784;
-    let mergedSpeciesCount = 0;
+    const speciesCount = Object.keys(project.species).length;
+    const newStatsTableOffset = mem.allocate(speciesCount * 28);
+    
+    // Update pointer table in ROM to point to new location (little-endian)
+    const pointerTableOffset = OFFSETS[project.game === 'emerald' ? 'emerald' : 'firered'].speciesBaseStats;
+    rom[pointerTableOffset] = newStatsTableOffset & 0xFF;
+    rom[pointerTableOffset + 1] = (newStatsTableOffset >> 8) & 0xFF;
+    rom[pointerTableOffset + 2] = (newStatsTableOffset >> 16) & 0xFF;
+    rom[pointerTableOffset + 3] = (newStatsTableOffset >> 24) & 0xFF;
 
+    let mergedSpeciesCount = 0;
     for (const species of Object.values(project.species)) {
-      const entryOffset = baseStatsTableOffset + (species.dexNumber * 28);
+      const entryOffset = newStatsTableOffset + (species.dexNumber * 28);
       if (entryOffset + 28 <= romSize) {
         rom[entryOffset + 0] = Math.min(255, Math.max(1, species.baseStats.hp));
         rom[entryOffset + 1] = Math.min(255, Math.max(1, species.baseStats.attack));
@@ -118,7 +153,7 @@ export class RomBuilder {
         mergedSpeciesCount++;
       }
     }
-    logs.push(`✓ Merged ${mergedSpeciesCount} Pokémon species base stats & types into ROM table.`);
+    logs.push(`✓ Relocated and merged ${mergedSpeciesCount} Pokémon species base stats to 0x${newStatsTableOffset.toString(16).toUpperCase()}.`);
 
     // 2. Merge Map Metatiles & Collision Blocks
     // Map block storage starts at 0x00400000 in ROM
@@ -149,19 +184,27 @@ export class RomBuilder {
     logs.push(`✓ Merged ${mergedMapsCount} map layout metatile banks and collision permissions.`);
 
     // 3. Merge Wild Encounter Tables
-    const encounterTableOffset = project.game === 'emerald' ? 0x00539C20 : 0x003C9B80;
-    let mergedEncountersCount = 0;
-    let encOffset = encounterTableOffset;
+    const encounterCount = Object.keys(project.wildEncounters).length;
+    const newEncounterTableOffset = mem.allocate(encounterCount * 64);
+    
+    // Update pointer table in ROM to point to new location (little-endian)
+    const encounterPointerTableOffset = OFFSETS[project.game === 'emerald' ? 'emerald' : 'firered'].wildEncounters;
+    rom[encounterPointerTableOffset] = newEncounterTableOffset & 0xFF;
+    rom[encounterPointerTableOffset + 1] = (newEncounterTableOffset >> 8) & 0xFF;
+    rom[encounterPointerTableOffset + 2] = (newEncounterTableOffset >> 16) & 0xFF;
+    rom[encounterPointerTableOffset + 3] = (newEncounterTableOffset >> 24) & 0xFF;
 
-    for (const [mapId, table] of Object.entries(project.wildEncounters)) {
-      if (encOffset + 64 <= 0x00600000) {
+    let mergedEncountersCount = 0;
+    let encOffset = newEncounterTableOffset;
+
+    for (const table of Object.values(project.wildEncounters)) {
+      if (encOffset + 64 <= romSize) {
         rom[encOffset] = Math.min(255, table.encounterRate);
         for (let s = 0; s < Math.min(12, table.land.length); s++) {
           const slot = table.land[s];
           const slotOffset = encOffset + 2 + (s * 4);
           rom[slotOffset] = slot.minLevel;
           rom[slotOffset + 1] = slot.maxLevel;
-          // Store 16-bit species index hash
           const specIdx = Math.abs(slot.species.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 386;
           rom[slotOffset + 2] = specIdx & 0xFF;
           rom[slotOffset + 3] = (specIdx >> 8) & 0xFF;
@@ -170,15 +213,24 @@ export class RomBuilder {
         mergedEncountersCount++;
       }
     }
-    logs.push(`✓ Merged ${mergedEncountersCount} wild encounter distribution tables.`);
+    logs.push(`✓ Relocated and merged ${mergedEncountersCount} wild encounter tables to 0x${newEncounterTableOffset.toString(16).toUpperCase()}.`);
 
     // 4. Merge Trainer Parties & AI Flags
-    const trainerTableOffset = project.game === 'emerald' ? 0x00310040 : 0x00239A00;
+    const trainerCount = Object.keys(project.trainers).length;
+    const newTrainerTableOffset = mem.allocate(trainerCount * 40);
+    
+    // Update pointer table in ROM to point to new location (little-endian)
+    const trainerPointerTableOffset = OFFSETS[project.game === 'emerald' ? 'emerald' : 'firered'].trainerParties;
+    rom[trainerPointerTableOffset] = newTrainerTableOffset & 0xFF;
+    rom[trainerPointerTableOffset + 1] = (newTrainerTableOffset >> 8) & 0xFF;
+    rom[trainerPointerTableOffset + 2] = (newTrainerTableOffset >> 16) & 0xFF;
+    rom[trainerPointerTableOffset + 3] = (newTrainerTableOffset >> 24) & 0xFF;
+
     let mergedTrainersCount = 0;
-    let trnOffset = trainerTableOffset;
+    let trnOffset = newTrainerTableOffset;
 
     for (const trainer of Object.values(project.trainers)) {
-      if (trnOffset + 40 <= 0x00320000) {
+      if (trnOffset + 40 <= romSize) {
         rom[trnOffset] = trainer.party.length;
         for (let p = 0; p < Math.min(6, trainer.party.length); p++) {
           const member = trainer.party[p];
@@ -192,15 +244,24 @@ export class RomBuilder {
         mergedTrainersCount++;
       }
     }
-    logs.push(`✓ Merged ${mergedTrainersCount} trainer parties, levels, and roster definitions.`);
+    logs.push(`✓ Relocated and merged ${mergedTrainersCount} trainer parties to 0x${newTrainerTableOffset.toString(16).toUpperCase()}.`);
 
     // 5. Merge Item Database & Shop Prices
-    const itemTableOffset = project.game === 'emerald' ? 0x00583FC0 : 0x003DAE80;
+    const itemCount = Object.keys(project.items).length;
+    const newItemTableOffset = mem.allocate(itemCount * 12);
+    
+    // Update pointer table in ROM to point to new location (little-endian)
+    const itemPointerTableOffset = OFFSETS[project.game === 'emerald' ? 'emerald' : 'firered'].itemTable;
+    rom[itemPointerTableOffset] = newItemTableOffset & 0xFF;
+    rom[itemPointerTableOffset + 1] = (newItemTableOffset >> 8) & 0xFF;
+    rom[itemPointerTableOffset + 2] = (newItemTableOffset >> 16) & 0xFF;
+    rom[itemPointerTableOffset + 3] = (newItemTableOffset >> 24) & 0xFF;
+
     let mergedItemsCount = 0;
-    let itmOffset = itemTableOffset;
+    let itmOffset = newItemTableOffset;
 
     for (const item of Object.values(project.items)) {
-      if (itmOffset + 12 <= 0x00590000) {
+      if (itmOffset + 12 <= romSize) {
         rom[itmOffset + 0] = item.price & 0xFF;
         rom[itmOffset + 1] = (item.price >> 8) & 0xFF;
         rom[itmOffset + 2] = item.battleUsage ? 1 : 0;
@@ -209,7 +270,7 @@ export class RomBuilder {
         mergedItemsCount++;
       }
     }
-    logs.push(`✓ Merged ${mergedItemsCount} items and Poké Mart prices into ROM tables.`);
+    logs.push(`✓ Relocated and merged ${mergedItemsCount} items to 0x${newItemTableOffset.toString(16).toUpperCase()}.`);
 
     // 6. Embed Complete PokéProject Payload at High Memory Offset (0x00E00000)
     const projectPayload = JSON.stringify(project);

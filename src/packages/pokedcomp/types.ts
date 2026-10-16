@@ -233,6 +233,7 @@ export interface DecompiledProject {
   moves: Record<string, Move>;
   trainers: Record<string, Trainer>;
   scripts: Record<string, EventScript>;
+  tilesets: Record<string, Uint8Array>;
 }
 
 export interface MapConnection {

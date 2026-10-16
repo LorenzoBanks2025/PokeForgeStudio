@@ -69,6 +69,14 @@ export class GbaRomReader {
     return 0;
   }
 
+  readTableEntries(offset: number, entrySize: number, count: number): Uint8Array[] {
+    const entries: Uint8Array[] = [];
+    for (let i = 0; i < count; i++) {
+      entries.push(this.buffer.slice(offset + (i * entrySize), offset + (i * entrySize) + entrySize));
+    }
+    return entries;
+  }
+
   readString(offset: number, maxLength = 32): string {
     let result = '';
     for (let i = 0; i < maxLength; i++) {
@@ -127,5 +135,36 @@ export class GbaRomReader {
 
   getRawBytes(offset: number, length: number): Uint8Array {
     return this.buffer.slice(offset, offset + length);
+  }
+
+  lz77Decompress(offset: number): Uint8Array {
+    const src = this.buffer.slice(offset);
+    const type = src[0];
+    if (type !== 0x10) throw new Error('Unsupported compression type');
+    
+    const size = src[1] | (src[2] << 8) | (src[3] << 16);
+    const dest = new Uint8Array(size);
+    let srcPtr = 4;
+    let destPtr = 0;
+    
+    while (destPtr < size) {
+      const flags = src[srcPtr++];
+      for (let i = 0; i < 8; i++) {
+        if (flags & (0x80 >> i)) {
+          const val = (src[srcPtr] << 8) | src[srcPtr + 1];
+          srcPtr += 2;
+          const length = (val >> 12) + 3;
+          const disp = (val & 0x0FFF) + 1;
+          for (let j = 0; j < length; j++) {
+            dest[destPtr] = dest[destPtr - disp];
+            destPtr++;
+          }
+        } else {
+          dest[destPtr++] = src[srcPtr++];
+        }
+        if (destPtr >= size) break;
+      }
+    }
+    return dest;
   }
 }
