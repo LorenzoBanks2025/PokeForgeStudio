@@ -1,13 +1,13 @@
 /**
  * @file TopNavbar.tsx
  * @package pokeview
- * @description Header following the Top Bar Contract with game target switcher and build triggers.
+ * @description Header following the Top Bar Contract with game target switcher, asset manager, and build triggers.
  */
 
 import React, { useRef } from 'react';
 import { StudioView } from '../types.ts';
 import { DecompiledProject, GameEngine } from '@/src/packages/pokedcomp/types.ts';
-import { Play, Upload, RefreshCw } from 'lucide-react';
+import { Play, Upload, FolderOpen, Save, Layers } from 'lucide-react';
 
 interface TopNavbarProps {
   activeView: StudioView;
@@ -16,6 +16,9 @@ interface TopNavbarProps {
   onSwitchGame: (game: GameEngine) => void;
   onImportRom: (file: File) => void;
   onOpenCompiler: () => void;
+  onOpenAssetManager: () => void;
+  onSaveProject: () => void;
+  onExportProject: () => void;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
@@ -24,7 +27,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   project,
   onSwitchGame,
   onImportRom,
-  onOpenCompiler
+  onOpenCompiler,
+  onOpenAssetManager,
+  onSaveProject,
+  onExportProject
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,53 +87,42 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           })}
         </nav>
 
-        {/* Zone 3: Actions - Switch Engine, Import, and Primary Build & Test CTA */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Dual Game Engine Switcher */}
-          <div className="flex items-center p-0.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-medium">
-            <button
-              onClick={() => onSwitchGame('emerald')}
-              className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                project.game === 'emerald'
-                  ? 'bg-emerald-600 text-white font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Emerald
-            </button>
-            <button
-              onClick={() => onSwitchGame('firered')}
-              className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                project.game === 'firered'
-                  ? 'bg-rose-600 text-white font-semibold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              FireRed
-            </button>
-          </div>
-
-          {/* Import GBA ROM File */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".gba"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+        {/* Zone 3: Actions - Asset Manager, Save, Export, and Primary Build & Test CTA */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Asset Manager */}
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={onOpenAssetManager}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
-            title="Import custom GBA ROM for decompilation"
+            title="Upload & Manage Assets"
           >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Decompile ROM</span>
+            <Layers className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Assets</span>
+          </button>
+
+          {/* Save Project */}
+          <button
+            onClick={onSaveProject}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+            title="Save Project"
+          >
+            <Save className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Save</span>
+          </button>
+
+          {/* Export Project Archive */}
+          <button
+            onClick={onExportProject}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+            title="Export .pokeforge Archive"
+          >
+            <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
+            <span>Export Archive</span>
           </button>
 
           {/* Primary Action Button */}
           <button
             onClick={onOpenCompiler}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm transition-all cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm transition-all cursor-pointer whitespace-nowrap ml-1"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Build & Test</span>

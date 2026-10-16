@@ -1,7 +1,7 @@
 /**
  * @file PokeViewApp.tsx
  * @package pokeview
- * @description Main GUI application integrating pokedcomp decompilation and pokecompiler build system.
+ * @description Main GUI application with mandatory ROM decompilation gate, project workspace archive management, and asset manager.
  */
 
 import React, { useState } from 'react';
@@ -17,111 +17,149 @@ import { WildEncounterView } from './components/WildEncounterEditor/WildEncounte
 import { PokemonDexView } from './components/PokemonEditor/PokemonDexView.tsx';
 import { BattleScriptsView } from './components/BattleScriptEditor/BattleScriptsView.tsx';
 import { CompilerModal } from './components/CompilerModal/CompilerModal.tsx';
+import { RomDecompileGate } from './components/RomDecompileGate.tsx';
+import { AssetManagerModal } from './components/AssetManager/AssetManagerModal.tsx';
 
 export const PokeViewApp: React.FC = () => {
-  // Core project state (initialized to pre-decompiled Emerald Littleroot Town)
-  const [project, setProject] = useState<DecompiledProject>(() => PokeDecompiler.getStarterProject('emerald'));
+  // If null, enforces mandatory decompilation ROM gate
+  const [project, setProject] = useState<DecompiledProject | null>(null);
   
   // Navigation & Tool State
   const [activeView, setActiveView] = useState<StudioView>('map_editor');
-  const [activeMapId, setActiveMapId] = useState<string>(() => Object.keys(project.maps)[0]);
+  const [activeMapId, setActiveMapId] = useState<string>('');
   const [selectedMetatile, setSelectedMetatile] = useState<number>(1);
   const [selectedTool, setSelectedTool] = useState<MapTool>('brush');
   const [selectedCollision, setSelectedCollision] = useState<MovementPermission>('passable');
   
-  // Compiler Modal State
+  // Modals
   const [isCompilerOpen, setIsCompilerOpen] = useState<boolean>(false);
-  const [decompLogs, setDecompLogs] = useState<string[]>([]);
-  const [showDecompNotification, setShowDecompNotification] = useState<boolean>(false);
+  const [isAssetManagerOpen, setIsAssetManagerOpen] = useState<boolean>(false);
+  const [statusToast, setStatusToast] = useState<string>('');
+
+  const handleProjectDecompiled = (decompiled: DecompiledProject) => {
+    setProject(decompiled);
+    setActiveMapId(Object.keys(decompiled.maps)[0] ?? '');
+  };
+
+  const handleSaveProject = async () => {
+    if (!project) return;
+    try {
+      const res = await fetch('/api/project/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectName: project.projectName, projectData: project })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatusToast('Project saved successfully to server projects directory!');
+        setTimeout(() => setStatusToast(''), 3000);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      // Fallback local download if server offline
+      handleExportProject();
+    }
+  };
+
+  const handleExportProject = () => {
+    if (!project) return;
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project.projectName}.pokeforge.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatusToast('Exported .pokeforge project archive file.');
+    setTimeout(() => setStatusToast(''), 3000);
+  };
+
+  if (!project) {
+    return <RomDecompileGate onProjectDecompiled={handleProjectDecompiled} />;
+  }
 
   // Active Map Data
   const currentMap = project.maps[activeMapId] ?? Object.values(project.maps)[0];
 
-  // Switch Game Engine (Emerald vs FireRed)
-  const handleSwitchGame = (game: GameEngine) => {
-    const starter = PokeDecompiler.getStarterProject(game);
-    setProject(starter);
-    setActiveMapId(Object.keys(starter.maps)[0]);
-  };
-
-  // Import custom .gba ROM
-  const handleImportRom = async (file: File) => {
-    try {
-      const buffer = await file.arrayBuffer();
-      const { project: decompiled, logs } = PokeDecompiler.decompileRom(buffer);
-      setProject(decompiled);
-      setActiveMapId(Object.keys(decompiled.maps)[0]);
-      setDecompLogs(logs);
-      setShowDecompNotification(true);
-      setTimeout(() => setShowDecompNotification(false), 5000);
-    } catch (err) {
-      alert(`Failed to parse GBA ROM: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
-
   // Update map layout blocks
   const handleUpdateBlocks = (newBlocks: MapBlock[]) => {
-    setProject(prev => ({
-      ...prev,
-      maps: {
-        ...prev.maps,
-        [activeMapId]: {
-          ...prev.maps[activeMapId],
-          layout: {
-            ...prev.maps[activeMapId].layout,
-            blocks: newBlocks
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        maps: {
+          ...prev.maps,
+          [activeMapId]: {
+            ...prev.maps[activeMapId],
+            layout: {
+              ...prev.maps[activeMapId].layout,
+              blocks: newBlocks
+            }
           }
         }
-      }
-    }));
+      };
+    });
   };
 
   // Update map events
   const handleUpdateEvents = (newEvents: MapEvents) => {
-    setProject(prev => ({
-      ...prev,
-      maps: {
-        ...prev.maps,
-        [activeMapId]: {
-          ...prev.maps[activeMapId],
-          events: newEvents
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        maps: {
+          ...prev.maps,
+          [activeMapId]: {
+            ...prev.maps[activeMapId],
+            events: newEvents
+          }
         }
-      }
-    }));
+      };
+    });
   };
 
   // Update script
   const handleUpdateScript = (updatedScript: EventScript) => {
-    setProject(prev => ({
-      ...prev,
-      scripts: {
-        ...prev.scripts,
-        [updatedScript.id]: updatedScript
-      }
-    }));
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        scripts: {
+          ...prev.scripts,
+          [updatedScript.id]: updatedScript
+        }
+      };
+    });
   };
 
   // Add new map
   const handleAddNewMap = (newMap: { layout: MapLayout; events: MapEvents }) => {
-    setProject(prev => ({
-      ...prev,
-      maps: {
-        ...prev.maps,
-        [newMap.layout.id]: newMap
-      }
-    }));
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        maps: {
+          ...prev.maps,
+          [newMap.layout.id]: newMap
+        }
+      };
+    });
     setActiveMapId(newMap.layout.id);
   };
 
   // Update wild encounters
   const handleUpdateWildTable = (table: WildEncounterTable) => {
-    setProject(prev => ({
-      ...prev,
-      wildEncounters: {
-        ...prev.wildEncounters,
-        [table.mapId]: table
-      }
-    }));
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        wildEncounters: {
+          ...prev.wildEncounters,
+          [table.mapId]: table
+        }
+      };
+    });
   };
 
   const handleCreateWildTable = (mapId: string) => {
@@ -151,44 +189,56 @@ export const PokeViewApp: React.FC = () => {
 
   // Pokémon species updates
   const handleUpdateSpecies = (updated: PokemonSpecies) => {
-    setProject(prev => ({
-      ...prev,
-      species: {
-        ...prev.species,
-        [updated.id]: updated
-      }
-    }));
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        species: {
+          ...prev.species,
+          [updated.id]: updated
+        }
+      };
+    });
   };
 
   const handleCreateSpecies = (newSpecies: PokemonSpecies) => {
-    setProject(prev => ({
-      ...prev,
-      species: {
-        ...prev.species,
-        [newSpecies.id]: newSpecies
-      }
-    }));
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        species: {
+          ...prev.species,
+          [newSpecies.id]: newSpecies
+        }
+      };
+    });
   };
 
   // Moves & Trainers
   const handleUpdateMove = (updated: Move) => {
-    setProject(prev => ({
-      ...prev,
-      moves: {
-        ...prev.moves,
-        [updated.id]: updated
-      }
-    }));
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        moves: {
+          ...prev.moves,
+          [updated.id]: updated
+        }
+      };
+    });
   };
 
   const handleUpdateTrainer = (updated: Trainer) => {
-    setProject(prev => ({
-      ...prev,
-      trainers: {
-        ...prev.trainers,
-        [updated.id]: updated
-      }
-    }));
+    setProject(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        trainers: {
+          ...prev.trainers,
+          [updated.id]: updated
+        }
+      };
+    });
   };
 
   return (
@@ -198,31 +248,30 @@ export const PokeViewApp: React.FC = () => {
         activeView={activeView}
         onSelectView={setActiveView}
         project={project}
-        onSwitchGame={handleSwitchGame}
-        onImportRom={handleImportRom}
+        onSwitchGame={game => {
+          const starter = PokeDecompiler.getStarterProject(game);
+          setProject(starter);
+          setActiveMapId(Object.keys(starter.maps)[0] ?? '');
+        }}
+        onImportRom={file => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const buffer = reader.result as ArrayBuffer;
+            const { project: decompiled } = PokeDecompiler.decompileRom(buffer);
+            setProject(decompiled);
+            setActiveMapId(Object.keys(decompiled.maps)[0] ?? '');
+          };
+          reader.readAsArrayBuffer(file);
+        }}
         onOpenCompiler={() => setIsCompilerOpen(true)}
+        onOpenAssetManager={() => setIsAssetManagerOpen(true)}
+        onSaveProject={handleSaveProject}
+        onExportProject={handleExportProject}
       />
 
-      {/* ROM Decompilation Notification Toast */}
-      {showDecompNotification && (
-        <div className="fixed top-16 right-6 z-50 bg-emerald-950 border border-emerald-600 rounded-xl p-4 shadow-2xl max-w-md animate-fade-in">
-          <div className="flex items-center justify-between font-bold text-xs text-emerald-300 font-display mb-1">
-            <span>✓ ROM Decompiled Successfully</span>
-            <button
-              onClick={() => setShowDecompNotification(false)}
-              className="text-emerald-400 hover:text-white"
-            >
-              ✕
-            </button>
-          </div>
-          <p className="text-[11px] text-emerald-200/80 mb-2">
-            Disassembled maps, wild encounter tables, Pokémon stats, and event scripts into PokéForge project model.
-          </p>
-          <div className="text-[10px] font-mono text-emerald-400/90 max-h-24 overflow-y-auto space-y-0.5 bg-slate-950/60 p-2 rounded">
-            {decompLogs.map((log, i) => (
-              <div key={i}>{log}</div>
-            ))}
-          </div>
+      {statusToast && (
+        <div className="fixed top-16 right-6 z-50 bg-emerald-950 border border-emerald-600 rounded-xl px-4 py-3 shadow-2xl text-xs text-emerald-300 font-medium animate-fade-in">
+          {statusToast}
         </div>
       )}
 
@@ -309,6 +358,14 @@ export const PokeViewApp: React.FC = () => {
         project={project}
         isOpen={isCompilerOpen}
         onClose={() => setIsCompilerOpen(false)}
+      />
+
+      {/* Asset Manager Modal */}
+      <AssetManagerModal
+        project={project}
+        isOpen={isAssetManagerOpen}
+        onClose={() => setIsAssetManagerOpen(false)}
+        onUpdateProject={setProject}
       />
     </div>
   );
