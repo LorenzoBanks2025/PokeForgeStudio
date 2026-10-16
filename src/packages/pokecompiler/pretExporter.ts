@@ -5,7 +5,7 @@
  */
 
 import JSZip from 'jszip';
-import { DecompiledProject } from '../pokedcomp/types.ts';
+import type { DecompiledProject } from '../pokedcomp/types.ts';
 
 export class PretExporter {
   static async exportSourceZip(project: DecompiledProject, logs: string[]): Promise<Blob> {

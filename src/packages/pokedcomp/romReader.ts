@@ -4,7 +4,7 @@
  * @description Binary GBA ROM reader and pointer dereferencing utilities.
  */
 
-import { RomHeader, GameEngine } from './types.ts';
+import type { RomHeader, GameEngine } from './types.ts';
 
 // Gen III standard charmap mapping for English ROMs
 const CHARMAP: Record<number, string> = {

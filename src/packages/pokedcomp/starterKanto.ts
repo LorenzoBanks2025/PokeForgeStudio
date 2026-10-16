@@ -4,7 +4,7 @@
  * @description Pre-decompiled complete project state for Pokémon FireRed (pokefirered).
  */
 
-import { DecompiledProject, MapBlock, MovementPermission } from './types.ts';
+import type { DecompiledProject, MapBlock, MovementPermission } from './types.ts';
 
 function createBlockGrid(width: number, height: number, fillMeta = 1, fillPerm: MovementPermission = 'passable'): MapBlock[] {
   const blocks: MapBlock[] = [];

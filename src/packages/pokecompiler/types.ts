@@ -4,7 +4,7 @@
  * @description Types and compiler options for pokecompiler.
  */
 
-import { DecompiledProject } from '../pokedcomp/types.ts';
+import type { DecompiledProject } from '../pokedcomp/types.ts';
 
 export type BuildTarget = 'gba_rom' | 'html5_bundle' | 'pret_zip' | 'ips_patch';
 

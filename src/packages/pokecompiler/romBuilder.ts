@@ -4,7 +4,7 @@
  * @description Serializes modified game data and merges PokéProject modifications into GBA ROM binaries.
  */
 
-import { DecompiledProject } from '../pokedcomp/types.ts';
+import type { DecompiledProject } from '../pokedcomp/types.ts';
 
 // Genuine 156-byte Nintendo GBA logo bitmap sequence required for BIOS boot verification
 const NINTENDO_LOGO_BYTES = [

@@ -2,7 +2,7 @@
 
 ## Current Status
 - **Phase**: PokéProject Directory Specification & Base ROM Merging Complete
-- **Version**: 1.3.0
+- **Version**: 1.3.1
 - **Build Status**: Verified & Compiling Successfully (`compile_applet`)
 - **Type Checking**: Clean (`tsc --noEmit` passed with 0 errors)
 

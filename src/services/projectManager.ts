@@ -5,7 +5,7 @@
  * Converts decompiled projects to/from directory structures with manifest.json, data/, and asset files.
  */
 
-import { DecompiledProject, GameEngine, MapLayout, MapEvents, PokemonSpecies, WildEncounterTable, Trainer, Item, Move, EventScript, ShopInventory } from '@/src/packages/pokedcomp/types.ts';
+import type { DecompiledProject, GameEngine, MapLayout, MapEvents, PokemonSpecies, WildEncounterTable, Trainer, Item, Move, EventScript, ShopInventory } from '@/src/packages/pokedcomp/types.ts';
 
 export interface ProjectManifest {
   format: 'pokeproject-v1';

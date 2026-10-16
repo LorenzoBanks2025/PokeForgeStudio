@@ -445,7 +445,7 @@ async function startServer() {
   // -------------------------------------------------------------
   // API: Fetch base ROM binary
   // -------------------------------------------------------------
-  app.get('/api/project/:name/base-rom', (req, res) => {
+  app.get(['/api/project/:name/base-rom', '/api/project/:name/base_rom.gba'], (req, res) => {
     try {
       const safeName = sanitizeProjectName(req.params.name);
       const baseRomPath = path.join(projectsDir, safeName, 'base_rom.gba');

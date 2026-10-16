@@ -5,7 +5,7 @@
  * references between maps, species, trainers, moves, and items.
  */
 
-import { DecompiledProject } from '@/src/packages/pokedcomp/types.ts';
+import type { DecompiledProject } from '@/src/packages/pokedcomp/types.ts';
 
 export interface IntegrityIssue {
   id: string;

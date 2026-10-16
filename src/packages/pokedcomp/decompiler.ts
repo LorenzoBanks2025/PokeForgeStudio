@@ -4,7 +4,7 @@
  * @description Advanced binary GBA Pokémon ROM decompiler engine parsing actual ROM pointer tables.
  */
 
-import { DecompiledProject, GameEngine, MapLayout, MapEvents, MapBlock, PokemonSpecies, WildEncounterTable } from './types.ts';
+import type { DecompiledProject, GameEngine, MapLayout, MapEvents, MapBlock, PokemonSpecies, WildEncounterTable } from './types.ts';
 import { GbaRomReader } from './romReader.ts';
 import { STARTER_HOENN_PROJECT } from './starterHoenn.ts';
 import { STARTER_KANTO_PROJECT } from './starterKanto.ts';

@@ -4,7 +4,7 @@
  * @description Event script bytecode disassembler for pokeemerald and pokefirered.
  */
 
-import { EventScript } from './types.ts';
+import type { EventScript } from './types.ts';
 import { GbaRomReader } from './romReader.ts';
 
 interface OpcodeDef {

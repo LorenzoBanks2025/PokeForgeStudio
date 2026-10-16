@@ -5,7 +5,7 @@
  */
 
 import JSZip from 'jszip';
-import { DecompiledProject } from '../pokedcomp/types.ts';
+import type { DecompiledProject } from '../pokedcomp/types.ts';
 import { RomBuilder } from './romBuilder.ts';
 
 export class StandaloneBuilder {

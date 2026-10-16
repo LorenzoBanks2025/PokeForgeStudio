@@ -5,8 +5,8 @@
  * wild encounter triggers, battle mode, and WebAudio chiptune synthesis.
  */
 
-import { DecompiledProject, MovementPermission } from '../pokedcomp/types.ts';
-import { EmulatorController } from './types.ts';
+import type { DecompiledProject, MovementPermission } from '../pokedcomp/types.ts';
+import type { EmulatorController } from './types.ts';
 
 export interface BattleState {
   active: boolean;

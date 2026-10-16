@@ -2,6 +2,12 @@
 
 All notable changes to PokéForge Studio will be documented in this file.
 
+## [1.3.1] - 2026-10-16
+### Fixed
+- **Node.js ESM Native Type-Only Import Syntax**:
+  - Resolved `SyntaxError: The requested module '../pokedcomp/types.ts' does not provide an export named 'DecompiledProject'` during Node.js v22/v24 execution by converting type-only imports in `romBuilder.ts`, `starterHoenn.ts`, `starterKanto.ts`, `compiler.ts`, `validator.ts`, `standaloneBuilder.ts`, `pretExporter.ts`, `wasmEmulator.ts`, and `projectManager.ts` to `import type`.
+  - Added `/api/project/:name/base_rom.gba` URL alias to backend server alongside `/api/project/:name/base-rom`.
+
 ## [1.3.0] - 2026-10-16
 ### Added
 - **PokéProject Directory Specification (`projects/<projectName>/`)**:

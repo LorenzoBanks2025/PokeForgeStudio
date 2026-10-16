@@ -4,9 +4,9 @@
  * @description Main compiler coordinator for building GBA ROMs, Standalone Bundles, and Pret C Trees.
  */
 
-import { DecompiledProject } from '../pokedcomp/types.ts';
+import type { DecompiledProject } from '../pokedcomp/types.ts';
 import { PokeDecompiler } from '../pokedcomp/decompiler.ts';
-import { CompilerOptions, CompileResult } from './types.ts';
+import type { CompilerOptions, CompileResult } from './types.ts';
 import { RomBuilder } from './romBuilder.ts';
 import { PretExporter } from './pretExporter.ts';
 import { StandaloneBuilder } from './standaloneBuilder.ts';

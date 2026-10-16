@@ -4,7 +4,7 @@
  * @description ROM integrity and validation pre-flight checker.
  */
 
-import { DecompiledProject } from '../pokedcomp/types.ts';
+import type { DecompiledProject } from '../pokedcomp/types.ts';
 
 export interface ValidationIssue {
   severity: 'error' | 'warning' | 'info';
