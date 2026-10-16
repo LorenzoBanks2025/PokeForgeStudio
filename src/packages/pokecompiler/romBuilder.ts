@@ -5,6 +5,7 @@
  */
 
 import type { DecompiledProject } from '../pokedcomp/types.ts';
+import { RomValidator } from './validator.ts';
 
 // Genuine 156-byte Nintendo GBA logo bitmap sequence required for BIOS boot verification
 const NINTENDO_LOGO_BYTES = [
@@ -41,6 +42,11 @@ export class RomBuilder {
     const rom = new Uint8Array(romSize);
 
     if (baseRom && baseRom.length > 0) {
+      const validation = RomValidator.validateBaseRom(baseRom);
+      if (!validation.isValid) {
+        logs.push(...validation.logs);
+        throw new Error('Base ROM validation failed.');
+      }
       logs.push(`✓ Merging into uploaded base ROM binary (${(baseRom.length / 1024 / 1024).toFixed(1)} MB)...`);
       rom.set(baseRom.subarray(0, romSize));
     } else {
