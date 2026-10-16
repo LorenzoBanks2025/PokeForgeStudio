@@ -1,0 +1,46 @@
+/**
+ * @file types.ts
+ * @package pokecompiler
+ * @description Types and compiler options for pokecompiler.
+ */
+
+import { DecompiledProject } from '../pokedcomp/types.ts';
+
+export type BuildTarget = 'gba_rom' | 'html5_bundle' | 'pret_zip';
+
+export interface CompilerOptions {
+  target: BuildTarget;
+  optimizeBytecode?: boolean;
+  verifyChecksums?: boolean;
+  injectDebugWarps?: boolean;
+}
+
+export interface CompileResult {
+  success: boolean;
+  target: BuildTarget;
+  romData?: Uint8Array;
+  zipBlob?: Blob;
+  logs: string[];
+  warnings: string[];
+  errors: string[];
+  stats: {
+    totalMaps: number;
+    totalSpecies: number;
+    totalEncounters: number;
+    romSizeBytes: number;
+    compiledAt: string;
+  };
+}
+
+export interface EmulatorController {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+  a: boolean;
+  b: boolean;
+  l: boolean;
+  r: boolean;
+  start: boolean;
+  select: boolean;
+}

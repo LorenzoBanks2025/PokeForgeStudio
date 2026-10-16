@@ -1,0 +1,6 @@
+{
+  "name": "PokéForge Studio",
+  "description": "GBA Pokémon ROM decompilation, GUI editing studio, and web/desktop recompiler for Pokémon Emerald and FireRed.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
